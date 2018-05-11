@@ -1,3 +1,8 @@
+//To Do:
+//1. After drawing done of Circular annotation, set _currentSelector of annotator to default rectangular selector
+//2. Unit testing
+//3. Remove repetitive code
+
 /**
  * The default selector: a simple click-and-drag rectangle selection tool.
  * @constructor

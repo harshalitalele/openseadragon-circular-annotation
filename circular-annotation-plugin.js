@@ -79,72 +79,76 @@ annotorious.plugin.CircDragSelector.prototype._attachListeners = function(startP
   var self = this;  
   var canvas = this._canvas;
   
-  this._mouseMoveListener = this._canvas.addEventListener('mousemove', function(event) {
-    var points = annotorious.events.ui.sanitizeCoordinates(event, canvas);
-    if (self._enabled) {
-      self._opposite = { x: points.x, y: points.y };
+  this.circMouseMove = function(event) {
+      var points = annotorious.events.ui.sanitizeCoordinates(event, canvas);
+      if (self._enabled) {
+          self._opposite = { x: points.x, y: points.y };
 
-      self._g2d.clearRect(0, 0, canvas.width, canvas.height);
-      
-      var xdiff = self._opposite.x - self._anchor.x;
-      var ydiff = self._opposite.y - self._anchor.y;
-        
-      var radius = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
+          self._g2d.clearRect(0, 0, canvas.width, canvas.height);
 
-      self.drawShape(self._g2d, {
-        type: annotorious.shape.ShapeType.CIRCLE,
-        geometry: {
-          x: self._anchor.x,
-          y: self._anchor.y,
-          radius: radius
-        },
-        style: {}
-      });
-    }
-  });
+          var xdiff = self._opposite.x - self._anchor.x;
+          var ydiff = self._opposite.y - self._anchor.y;
 
-  this._mouseUpListener = this._canvas.addEventListener('mouseup', function(event) {
-    var points = annotorious.events.ui.sanitizeCoordinates(event, canvas);
-    var shape = self.getShape();
-      var xdiff = self._opposite.x - self._anchor.x;
-      var ydiff = self._opposite.y - self._anchor.y;
-        
-      var radius = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
-      shape.geometry.x = self._anchor.x;
-      shape.geometry.y = self._anchor.y;
-      shape.geometry.radius = radius;
-      delete shape.geometry.height;
-      delete shape.geometry.width;
-    event = (event.event_) ? event.event_ : event;
-    
-    self._enabled = false;
-    if (shape) {
-      self._detachListeners();
-      self._annotator.fireEvent(annotorious.events.EventType.SELECTION_COMPLETED,
-        { mouseEvent: event, shape: shape, viewportBounds: self.getViewportBounds() }); 
-    } else {
-      self._annotator.fireEvent(annotorious.events.EventType.SELECTION_CANCELED);
+          var radius = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
+          self.drawShape(self._g2d, {
+              type: annotorious.shape.ShapeType.CIRCLE,
+              geometry: {
+                  x: self._anchor.x,
+                  y: self._anchor.y,
+                  radius: radius
+              },
+              style: {}
+          });
+      }
+  };
+  this._mouseMoveListener = this._canvas.addEventListener('mousemove', this.circMouseMove );
 
-      // On cancel, we "relay" the selection event to the annotator
-      var annotations = self._annotator.getAnnotationsAt(points.x, points.y);
-      if (annotations.length > 0)
-        self._annotator.highlightAnnotation(annotations[0]);
-    }
-  });
-}
+  this.circMouseUp = function(event) {
+      console.log("mouse up called Harshali");
+      var points = annotorious.events.ui.sanitizeCoordinates(event, canvas);
+      var shape = self.getShape();
+
+      event = (event.event_) ? event.event_ : event;
+
+      self._enabled = false;
+      if (shape) {
+        var xdiff = self._opposite.x - self._anchor.x;
+        var ydiff = self._opposite.y - self._anchor.y;
+        var radius = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
+
+        shape.geometry.x = self._anchor.x;
+        shape.geometry.y = self._anchor.y;
+        shape.geometry.radius = radius;
+        delete shape.geometry.height;
+        delete shape.geometry.width;
+        self._detachListeners();
+        self._annotator.fireEvent(annotorious.events.EventType.SELECTION_COMPLETED,
+            { mouseEvent: event, shape: shape, viewportBounds: self.getViewportBounds() });
+      } else {
+        self._annotator.fireEvent(annotorious.events.EventType.SELECTION_CANCELED);
+        // On cancel, we "relay" the selection event to the annotator
+        var annotations = self._annotator.getAnnotationsAt(points.x, points.y);
+        if (annotations.length > 0)
+            self._annotator.highlightAnnotation(annotations[0]);
+        }
+    };
+    this._mouseUpListener = this._canvas.addEventListener('mouseup', this.circMouseUp);
+};
 
 /**
  * Detaches MOUSEUP and MOUSEMOVE listeners from the editing canvas.
  * @private
  */
 annotorious.plugin.CircDragSelector.prototype._detachListeners = function() {
-  if (this._mouseMoveListener) {
-    delete this._mouseMoveListener;
-  }
+    if (this.circMouseMove) {
+        this._canvas.removeEventListener('mousemove', this.circMouseMove);
+        delete this._mouseMoveListener;
+    }
 
-  if (this._mouseUpListener) {
-    delete this._mouseUpListener;
-  }
+    if (this.circMouseUp) {
+        this._canvas.removeEventListener('mouseup', this.circMouseUp);
+        delete this._mouseUpListener;
+    }
 }
 
 /**
@@ -163,7 +167,7 @@ annotorious.plugin.CircDragSelector.prototype.getName = function() {
  * @return the supported shape type
  */
 annotorious.plugin.CircDragSelector.prototype.getSupportedShapeType = function() {
-  return annotorious.shape.ShapeType.RECTANGLE;
+    return "circle";
 }
 
 /**

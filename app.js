@@ -10,6 +10,6 @@ var osd = OpenSeadragon({
 
 anno.makeAnnotatable(osd);
 
-function activateCircularAnnotation() {
-    anno.selectTypeAndActivateSelector('circle');
+function activateAnnotation(annotationType) {
+    anno.selectTypeAndActivateSelector(annotationType);
 }
